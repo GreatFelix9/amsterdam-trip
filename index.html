@@ -216,6 +216,22 @@ button{cursor:pointer;font-family:inherit;}
 .notes-save{margin-top:8px;padding:9px 18px;border:none;border-radius:10px;background:var(--blue);color:#fff;font-size:13px;font-weight:700;}
 
 /* ═══════════════════════════════════
+   PASSWORD MODAL
+═══════════════════════════════════ */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:1.5rem;}
+.modal-overlay.hidden{display:none;}
+.modal-box{background:var(--card);border-radius:var(--r);padding:1.5rem;width:100%;max-width:320px;}
+.modal-title{font-size:18px;font-weight:700;margin-bottom:.4rem;}
+.modal-sub{font-size:13px;color:var(--muted);margin-bottom:1rem;}
+.modal-input{width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:10px;font-size:16px;font-family:inherit;letter-spacing:3px;text-align:center;margin-bottom:.75rem;}
+.modal-input:focus{outline:none;border-color:var(--blue);}
+.modal-error{font-size:13px;color:var(--coral);margin-bottom:.75rem;display:none;}
+.modal-btns{display:flex;gap:8px;}
+.modal-btn{flex:1;padding:10px;border:none;border-radius:10px;font-size:14px;font-weight:700;}
+.modal-confirm{background:var(--blue);color:#fff;}
+.modal-cancel{background:var(--bg);color:var(--text);}
+
+/* ═══════════════════════════════════
    INFO
 ═══════════════════════════════════ */
 .info-section{margin-bottom:1.25rem;}
@@ -248,7 +264,18 @@ button{cursor:pointer;font-family:inherit;}
   <button class="mode-btn" id="btn-shared" onclick="setMode('shared')">👥 Shared</button>
 </div>
 
-
+<div class="modal-overlay hidden" id="pw-modal">
+  <div class="modal-box">
+    <div class="modal-title">🔐 Shared edit</div>
+    <div class="modal-sub">Enter the group password to change shared times</div>
+    <input class="modal-input" type="password" id="pw-input" placeholder="••••" maxlength="10">
+    <div class="modal-error" id="pw-error">Wrong password — try again</div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-cancel" onclick="closePwModal()">Cancel</button>
+      <button class="modal-btn modal-confirm" onclick="checkPassword()">Unlock</button>
+    </div>
+  </div>
+</div>
 
 <div class="screen active" id="home">
   <div class="home-hero">
@@ -269,7 +296,10 @@ button{cursor:pointer;font-family:inherit;}
       <div class="info-tile"><div class="info-label">Budget</div><div class="info-val">~£200</div><div class="info-detail">Per person</div></div>
     </div>
     <div class="alert-card">✅ All 8 leaving together on the 7th — everyone does the final overnight!</div>
-
+    <div class="section-label">Book these NOW</div>
+    <div class="todo-card">
+      <div class="todo-item"><span class="todo-icon">🌆</span><div><div class="todo-name">City Activity Day</div><div class="todo-detail">Decide activities together on the day</div></div><span class="todo-status pending">Flexible</span></div>
+      <div class="todo-item"><span class="todo-icon">🏊</span><div><div class="todo-name">Tiki Pool (Duinrell)</div><div class="todo-detail">€27.50pp · 17:00 slot · Sun 5 Jul</div></div><span class="todo-status done">To do</span></div>
     </div>
     <div class="section-label">Accommodation</div>
     <div class="accom-card">
