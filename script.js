@@ -1,0 +1,1 @@
+console.log("Amsterdam Trip App loaded 🚀");
