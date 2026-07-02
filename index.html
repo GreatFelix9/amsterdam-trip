@@ -64,7 +64,7 @@ button{cursor:pointer;font-family:inherit;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
 
 /* ═══════════════════════════════════
-   TILES & CARDS (shared)
+   TILES & CARDS
 ═══════════════════════════════════ */
 .info-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem;}
 .info-tile{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:.85rem 1rem;}
@@ -258,14 +258,12 @@ button{cursor:pointer;font-family:inherit;}
 </head>
 <body>
 
-<!-- MODE BAR -->
 <div class="mode-bar">
   <span class="mode-label">MODE:</span>
   <button class="mode-btn active" id="btn-personal" onclick="setMode('personal')">👤 Personal</button>
   <button class="mode-btn" id="btn-shared" onclick="setMode('shared')">👥 Shared</button>
 </div>
 
-<!-- PASSWORD MODAL -->
 <div class="modal-overlay hidden" id="pw-modal">
   <div class="modal-box">
     <div class="modal-title">🔐 Shared edit</div>
@@ -279,7 +277,6 @@ button{cursor:pointer;font-family:inherit;}
   </div>
 </div>
 
-<!-- ═══════ HOME ═══════ -->
 <div class="screen active" id="home">
   <div class="home-hero">
     <div class="hero-flag">🇳🇱</div>
@@ -315,7 +312,6 @@ button{cursor:pointer;font-family:inherit;}
   </div>
 </div>
 
-<!-- ═══════ ITINERARY ═══════ -->
 <div class="screen" id="itinerary">
   <div class="screen-header">
     <h2>📅 Itinerary</h2>
@@ -324,55 +320,52 @@ button{cursor:pointer;font-family:inherit;}
   <div class="screen-body" id="itinerary-content"></div>
 </div>
 
-<!-- ═══════ ACTIVITIES ═══════ -->
 <div class="screen" id="activities">
   <div class="screen-header"><h2>🎯 Activities</h2><div class="screen-sub">What's planned</div></div>
   <div class="screen-body" id="activities-content"></div>
 </div>
 
-<!-- ═══════ FOOD ═══════ -->
 <div class="screen" id="food">
   <div class="screen-header"><h2>🍽️ Food</h2><div class="screen-sub">All optional — pick on the day</div></div>
   <div class="screen-body" id="food-content"></div>
 </div>
 
-<!-- ═══════ CLUBS ═══════ -->
 <div class="screen" id="clubs">
   <div class="screen-header"><h2>🎉 Clubs & Bars</h2><div class="screen-sub">Potential nights out</div></div>
   <div class="screen-body" id="clubs-content"></div>
 </div>
 
-<!-- ═══════ PURCHASES ═══════ -->
 <div class="screen" id="purchases">
   <div class="screen-header"><h2>💸 Purchases</h2><div class="screen-sub" id="purchases-sub">Track your spending</div></div>
   <div class="screen-body" id="purchases-content"></div>
 </div>
 
-<!-- ═══════ INFO ═══════ -->
 <div class="screen" id="info">
   <div class="screen-header"><h2>ℹ️ Info</h2></div>
   <div class="screen-body" id="info-content"></div>
 </div>
 
-<!-- BOTTOM NAV (rebuilt per mode) -->
 <nav class="bottom-nav" id="bottom-nav"></nav>
 
 <script>
 // ════════════════════════════════════════
-//  STATE
+//  STATE & CONFIGURATION
 // ════════════════════════════════════════
-let currentMode = 'personal'; // 'personal' | 'shared'
+let currentMode = 'personal'; 
 let sharedUnlocked = false;
 let pendingEditEl = null;
-let pendingEditKey = null;
+let currentScreen = 'home';
 
-const JSONBIN_BIN_ID = 'amsterdam2026trip';
-const JSONBIN_API = `https://api.jsonbin.io/v3/b`;
-// We'll use localStorage as the sync backend (no API key needed, works offline)
-// For a real shared version, replace with a backend. For now shared = same localStorage key visible to all on same device / can be seeded via a shared link.
+const API_KEY = '$2a$10$tUEGnNwl/Gz8pCUZwa6bfea6YgnnauKC7hGVKRhouNJ/xEgwIRziq';
+const JSONBIN_BIN_ID = '6a45e233f5f4af5e2951855e'; 
+
+let cloudData = {
+  itinerary: null,
+  groupPurchases: null
+};
 
 // ════════════════════════════════════════
-//  DATA
+//  DEFAULT STATIC DATA
 // ════════════════════════════════════════
 const DEFAULT_ITINERARY = [
   { day:"Day 1", date:"Friday 3 July", title:"Arrival + Wondr", color:"blue",
@@ -457,12 +450,51 @@ const TAG_CFG = {
 };
 
 // ════════════════════════════════════════
-//  STORAGE HELPERS (UPDATED FOR CLOUD SYNC)
+//  LIVE SYNC DATABASE ENGINE
 // ════════════════════════════════════════
-const BIN_ID = 6a45e233f5f4af5e2951855e; // Paste your JSONBin Bin ID here
-const API_KEY = $2a$10$tUEGnNwl/Gz8pCUZwa6bfea6YgnnauKC7hGVKRhouNJ/xEgwIRziq; // Paste your JSONBin X-Access-Key here
+async function fetchCloudData() {
+  try {
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+      headers: { 'X-Access-Key': API_KEY }
+    });
+    if (!res.ok) throw new Error('API Sync Failed');
+    const json = await res.json();
+    cloudData.itinerary = json.record.itinerary;
+    cloudData.groupPurchases = json.record.groupPurchases;
+    localStorage.setItem('ams_shared_cache', JSON.stringify(json.record));
+  } catch (e) {
+    console.warn("Cloud connection error, checking local backup cache...", e);
+    const backup = localStorage.getItem('ams_shared_cache');
+    if (backup) {
+      const parsed = JSON.parse(backup);
+      cloudData.itinerary = parsed.itinerary;
+      cloudData.groupPurchases = parsed.groupPurchases;
+    }
+  }
+}
 
-// Personal data stays on the device (Offline capable)
+async function pushCloudData() {
+  updateSyncStatus('Saving…');
+  try {
+    await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Access-Key': API_KEY
+      },
+      body: JSON.stringify({
+        itinerary: cloudData.itinerary || DEFAULT_ITINERARY,
+        groupPurchases: cloudData.groupPurchases || []
+      })
+    });
+    localStorage.setItem('ams_shared_cache', JSON.stringify(cloudData));
+    updateSyncStatus('Synced with group');
+  } catch (e) {
+    console.error("Cloud push failed", e);
+    updateSyncStatus('Error saving to cloud');
+  }
+}
+
 function loadPersonal(key, def) {
   try { const v = localStorage.getItem('ams_personal_'+key); return v ? JSON.parse(v) : def; } catch(e){ return def; }
 }
@@ -470,73 +502,19 @@ function savePersonal(key, val) {
   try { localStorage.setItem('ams_personal_'+key, JSON.stringify(val)); } catch(e){}
 }
 
-// Shared data fetches from the cloud (Live)
-let sharedCache = {};
-
-async function loadShared(key, def) {
-  try {
-    const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
-      headers: { 'X-Access-Key': API_KEY }
-    });
-    const data = await response.json();
-    sharedCache = data.record;
-    return sharedCache[key] || def;
-  } catch(e) {
-    console.error("Cloud load failed, using cache/default", e);
-    return sharedCache[key] || def;
+function getItinerary() {
+  if (currentMode === 'shared') return cloudData.itinerary || DEFAULT_ITINERARY;
+  return loadPersonal('itinerary', JSON.parse(JSON.stringify(DEFAULT_ITINERARY)));
+}
+function saveItinerary(data) {
+  if (currentMode === 'shared') {
+    cloudData.itinerary = data;
+    pushCloudData();
+  } else {
+    savePersonal('itinerary', data);
   }
 }
 
-async function saveShared(key, val) {
-  sharedCache[key] = val;
-  try {
-    await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Access-Key': API_KEY
-      },
-      body: JSON.stringify(sharedCache)
-    });
-  } catch(e) {
-    console.error("Cloud save failed", e);
-  }
-}
-
-// Update the getItinerary function to handle the async cloud load
-async function renderItinerary() {
-  const store = currentMode === 'shared' ? await loadShared('itinerary', DEFAULT_ITINERARY) : loadPersonal('itinerary', DEFAULT_ITINERARY);
-  const data = store || DEFAULT_ITINERARY;
-  const canEdit = currentMode === 'personal' || sharedUnlocked;
-  const c = document.getElementById('itinerary-content');
-  
-  c.innerHTML = data.map((d,di) => `
-    <div class="day-card">
-      <div class="day-header color-${d.color}">
-        <div class="day-pill">${d.day}</div>
-        <div><div class="day-title">${d.title}</div><div class="day-date">${d.date}</div></div>
-      </div>
-      <div class="events">
-        ${d.events.map((e,ei) => `
-          <div class="event">
-            <input class="time-edit" type="text" value="${e.time}" data-di="${di}" data-ei="${ei}"
-              ${canEdit?'':'readonly'}
-              onfocus="onTimeFocus(this)"
-              onblur="onTimeBlur(this)"
-            >
-            <div class="event-body">
-              <div class="event-name">${e.name}</div>
-              ${e.detail?`<div class="event-detail">${e.detail}</div>`:''}
-              ${e.tags&&e.tags.length?`<div class="tags">${makeTags(e.tags)}</div>`:''}
-            </div>
-          </div>`).join('')}
-      </div>
-    </div>`).join('');
-
-  if (currentMode === 'shared' && sharedUnlocked) {
-    c.querySelectorAll('.time-edit').forEach(inp => inp.removeAttribute('readonly'));
-  }
-}
 // ════════════════════════════════════════
 //  NAV CONFIG
 // ════════════════════════════════════════
@@ -559,8 +537,6 @@ const SHARED_NAV = [
   {id:'info',     icon:'ℹ️',  label:'Info'},
 ];
 
-let currentScreen = 'home';
-
 function buildNav(navItems) {
   const nav = document.getElementById('bottom-nav');
   nav.innerHTML = navItems.map(n => `
@@ -573,24 +549,34 @@ function buildNav(navItems) {
 // ════════════════════════════════════════
 //  MODE SWITCHING
 // ════════════════════════════════════════
-function setMode(mode) {
+async function setMode(mode) {
   currentMode = mode;
   sharedUnlocked = false;
   document.getElementById('btn-personal').classList.toggle('active', mode==='personal');
   document.getElementById('btn-shared').classList.toggle('active', mode==='shared');
   document.getElementById('mode-badge').textContent = mode==='personal' ? '👤 Personal mode' : '👥 Shared mode';
-  document.getElementById('shared-sync-bar').style.display = mode==='shared' ? 'flex' : 'none';
+  
+  const syncBar = document.getElementById('shared-sync-bar');
+  if (mode === 'shared') {
+    syncBar.style.display = 'flex';
+    updateSyncStatus('Fetching group updates...');
+    await fetchCloudData();
+    updateSyncStatus('Synced with group');
+  } else {
+    syncBar.style.display = 'none';
+  }
+
   document.getElementById('itin-sub').textContent = mode==='personal'
-    ? 'Tap a time to edit (personal only)'
+    ? 'Tap times to edit (personal mode)'
     : '🔐 Password required to edit shared times';
   document.getElementById('purchases-sub').textContent = mode==='personal'
-    ? 'Your personal spending' : 'Group spending tracker';
+    ? 'Track your spending' : 'Group spending tracker';
   buildNav(mode==='personal' ? PERSONAL_NAV : SHARED_NAV);
   showScreen(currentScreen);
 }
 
 // ════════════════════════════════════════
-//  SCREEN SWITCHING
+//  SCREEN CONTROLLER
 // ════════════════════════════════════════
 const RENDERERS = {
   itinerary: renderItinerary,
@@ -613,11 +599,10 @@ function showScreen(id, btn) {
 }
 
 // ════════════════════════════════════════
-//  PASSWORD
+//  PASSWORD SECURITY System
 // ════════════════════════════════════════
-function requestUnlock(el, key) {
+function requestUnlock(el) {
   pendingEditEl = el;
-  pendingEditKey = key;
   document.getElementById('pw-modal').classList.remove('hidden');
   document.getElementById('pw-input').value = '';
   document.getElementById('pw-error').style.display = 'none';
@@ -626,14 +611,18 @@ function requestUnlock(el, key) {
 function closePwModal() {
   document.getElementById('pw-modal').classList.add('hidden');
   pendingEditEl = null;
-  pendingEditKey = null;
 }
 function checkPassword() {
   const val = document.getElementById('pw-input').value.trim().toUpperCase();
   if (val === 'GREAT') {
     sharedUnlocked = true;
     closePwModal();
-    if (pendingEditEl) { pendingEditEl.removeAttribute('readonly'); pendingEditEl.focus(); pendingEditEl = null; }
+    if (pendingEditEl) { 
+      pendingEditEl.removeAttribute('readonly'); 
+      pendingEditEl.focus(); 
+      pendingEditEl = null; 
+    }
+    renderItinerary();
   } else {
     document.getElementById('pw-error').style.display = 'block';
     document.getElementById('pw-input').value = '';
@@ -642,7 +631,7 @@ function checkPassword() {
 document.getElementById('pw-input').addEventListener('keydown', e => { if(e.key==='Enter') checkPassword(); });
 
 // ════════════════════════════════════════
-//  ITINERARY
+//  ITINERARY VIEWS
 // ════════════════════════════════════════
 function makeTags(tags) {
   return (tags||[]).map(t => {
@@ -677,19 +666,12 @@ function renderItinerary() {
           </div>`).join('')}
       </div>
     </div>`).join('');
-
-  // attach blur save for shared-unlocked
-  if (currentMode === 'shared' && sharedUnlocked) {
-    c.querySelectorAll('.time-edit').forEach(inp => {
-      inp.removeAttribute('readonly');
-    });
-  }
 }
 
 function onTimeFocus(el) {
   if (currentMode === 'shared' && !sharedUnlocked) {
     el.blur();
-    requestUnlock(el, null);
+    requestUnlock(el);
   }
 }
 
@@ -699,26 +681,26 @@ function onTimeBlur(el) {
   if (data[di] && data[di].events[ei]) {
     data[di].events[ei].time = el.value;
     saveItinerary(data);
-    if (currentMode === 'shared') updateSyncStatus();
   }
 }
 
-function updateSyncStatus() {
+function updateSyncStatus(text) {
   const dot = document.getElementById('sync-dot');
   const txt = document.getElementById('sync-status');
-  dot.classList.add('syncing');
-  txt.textContent = 'Saving…';
-  setTimeout(()=>{ dot.classList.remove('syncing'); txt.textContent = 'Synced with group'; }, 800);
+  if (text === 'Saving…' || text === 'Fetching group updates...') {
+    dot.classList.add('syncing');
+  } else {
+    dot.classList.remove('syncing');
+  }
+  txt.textContent = text;
 }
 
 // ════════════════════════════════════════
-//  ACTIVITIES
+//  ACTIVITIES VIEW
 // ════════════════════════════════════════
 function renderActivities() {
   const c = document.getElementById('activities-content');
   c.innerHTML = ACTIVITIES.map(a => {
-    const bc = a.badgeColor;
-    const bgVar = `var(--${bc}-bg)`, clrVar = `var(--${bc})`;
     const bookedHtml = a.booked
       ? `<span class="act-badge" style="background:var(--teal-bg);color:var(--teal)">✓ Booked</span>`
       : `<span class="act-badge" style="background:var(--amber-bg);color:var(--amber)">${a.badge}</span>`;
@@ -740,7 +722,7 @@ function renderActivities() {
 }
 
 // ════════════════════════════════════════
-//  FOOD
+//  FOOD & NIGHTLIFE VIEWS
 // ════════════════════════════════════════
 function renderFood() {
   document.getElementById('food-content').innerHTML =
@@ -753,9 +735,6 @@ function renderFood() {
       </div>`).join('')}</div>`;
 }
 
-// ════════════════════════════════════════
-//  CLUBS
-// ════════════════════════════════════════
 function renderClubs() {
   document.getElementById('clubs-content').innerHTML = CLUBS.map(cl=>`
     <div class="club-card">
@@ -770,15 +749,19 @@ function renderClubs() {
 }
 
 // ════════════════════════════════════════
-//  PURCHASES
+//  PURCHASES & PERSONAL EXTRA SYSTEM
 // ════════════════════════════════════════
 function getPurchases() {
-  const k = currentMode==='shared' ? 'group' : 'personal';
-  return loadPersonal('purchases_'+k, []);
+  if (currentMode === 'shared') return cloudData.groupPurchases || [];
+  return loadPersonal('purchases_personal', []);
 }
 function savePurchases(arr) {
-  const k = currentMode==='shared' ? 'group' : 'personal';
-  savePersonal('purchases_'+k, arr);
+  if (currentMode === 'shared') {
+    cloudData.groupPurchases = arr;
+    pushCloudData();
+  } else {
+    savePersonal('purchases_personal', arr);
+  }
 }
 
 const BUDGET = 332;
@@ -827,7 +810,6 @@ function renderPurchases() {
           }).join('')}
     </div>`;
 
-  // personal mode: also show wake up times + notes
   if (currentMode === 'personal') {
     const wakes = loadPersonal('wakes', {});
     const notes = loadPersonal('notes', '');
@@ -845,7 +827,7 @@ function renderPurchases() {
         <div class="section-label">📝 Personal notes</div>
         <div class="notes-card">
           <div class="notes-title">Anything to remember</div>
-          <textarea class="notes-textarea" id="personal-notes" placeholder="Things to pack, people to call, anything...">${notes}</textarea>
+          <textarea class="notes-textarea" id="personal-notes" placeholder="Things to pack, people to call...">${notes}</textarea>
           <button class="notes-save" onclick="saveNotes()">Save notes</button>
         </div>
       </div>`;
@@ -877,6 +859,9 @@ function saveWake(day, val) {
   savePersonal('wakes', wakes);
 }
 
+// ════════════════════════════════════════
+//  GENERAL STATIC INFO
+// ════════════════════════════════════════
 function saveNotes() {
   const val = document.getElementById('personal-notes').value;
   savePersonal('notes', val);
@@ -885,9 +870,6 @@ function saveNotes() {
   setTimeout(()=>btn.textContent='Save notes', 1500);
 }
 
-// ════════════════════════════════════════
-//  INFO
-// ════════════════════════════════════════
 function renderInfo() {
   document.getElementById('info-content').innerHTML = `
     <div class="info-section">
