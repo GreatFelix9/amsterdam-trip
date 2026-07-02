@@ -1,3 +1,17 @@
+You are almost there, but there are **two critical issues** with the code you pasted:
+
+1. **Missing Quotes (Syntax Error):** In JavaScript, text strings like your Bin ID and API Key *must* be wrapped in quotation marks. Right now, they look like this:
+`const BIN_ID = 6a45e233f5f4af5e2951855e;`
+This will immediately crash the app because the browser thinks `6a45e...` is a math variable instead of text. It needs to be `'6a45e233f5f4af5e2951855e'`.
+2. **Cut Off at the Bottom:** Your code copy/paste got cut off at the very bottom right at `const PERSONAL_NAV = [ {id:'home',     ic`.
+
+Instead of making you stitch the pieces together, I have taken your specific `BIN_ID` and your `API_KEY`, added the missing quotes, and merged everything into the final, complete version of the app.
+
+### **The Final Step**
+
+Delete everything inside your current `index.html` file on GitHub, and paste this exact block of code. It contains all the styling, the HTML, and the live cloud-syncing JavaScript for both the itinerary and the group purchases:
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -921,3 +935,5 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
+```
