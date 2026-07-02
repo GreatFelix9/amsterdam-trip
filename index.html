@@ -457,30 +457,86 @@ const TAG_CFG = {
 };
 
 // ════════════════════════════════════════
-//  STORAGE HELPERS
+//  STORAGE HELPERS (UPDATED FOR CLOUD SYNC)
 // ════════════════════════════════════════
+const BIN_ID = 6a45e233f5f4af5e2951855e; // Paste your JSONBin Bin ID here
+const API_KEY = $2a$10$tUEGnNwl/Gz8pCUZwa6bfea6YgnnauKC7hGVKRhouNJ/xEgwIRziq; // Paste your JSONBin X-Access-Key here
+
+// Personal data stays on the device (Offline capable)
 function loadPersonal(key, def) {
   try { const v = localStorage.getItem('ams_personal_'+key); return v ? JSON.parse(v) : def; } catch(e){ return def; }
 }
 function savePersonal(key, val) {
   try { localStorage.setItem('ams_personal_'+key, JSON.stringify(val)); } catch(e){}
 }
-function loadShared(key, def) {
-  try { const v = localStorage.getItem('ams_shared_'+key); return v ? JSON.parse(v) : def; } catch(e){ return def; }
-}
-function saveShared(key, val) {
-  try { localStorage.setItem('ams_shared_'+key, JSON.stringify(val)); } catch(e){}
+
+// Shared data fetches from the cloud (Live)
+let sharedCache = {};
+
+async function loadShared(key, def) {
+  try {
+    const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+      headers: { 'X-Access-Key': API_KEY }
+    });
+    const data = await response.json();
+    sharedCache = data.record;
+    return sharedCache[key] || def;
+  } catch(e) {
+    console.error("Cloud load failed, using cache/default", e);
+    return sharedCache[key] || def;
+  }
 }
 
-function getItinerary() {
-  const store = currentMode === 'shared' ? loadShared : loadPersonal;
-  return store('itinerary', JSON.parse(JSON.stringify(DEFAULT_ITINERARY)));
-}
-function saveItinerary(data) {
-  const store = currentMode === 'shared' ? saveShared : savePersonal;
-  store('itinerary', data);
+async function saveShared(key, val) {
+  sharedCache[key] = val;
+  try {
+    await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Access-Key': API_KEY
+      },
+      body: JSON.stringify(sharedCache)
+    });
+  } catch(e) {
+    console.error("Cloud save failed", e);
+  }
 }
 
+// Update the getItinerary function to handle the async cloud load
+async function renderItinerary() {
+  const store = currentMode === 'shared' ? await loadShared('itinerary', DEFAULT_ITINERARY) : loadPersonal('itinerary', DEFAULT_ITINERARY);
+  const data = store || DEFAULT_ITINERARY;
+  const canEdit = currentMode === 'personal' || sharedUnlocked;
+  const c = document.getElementById('itinerary-content');
+  
+  c.innerHTML = data.map((d,di) => `
+    <div class="day-card">
+      <div class="day-header color-${d.color}">
+        <div class="day-pill">${d.day}</div>
+        <div><div class="day-title">${d.title}</div><div class="day-date">${d.date}</div></div>
+      </div>
+      <div class="events">
+        ${d.events.map((e,ei) => `
+          <div class="event">
+            <input class="time-edit" type="text" value="${e.time}" data-di="${di}" data-ei="${ei}"
+              ${canEdit?'':'readonly'}
+              onfocus="onTimeFocus(this)"
+              onblur="onTimeBlur(this)"
+            >
+            <div class="event-body">
+              <div class="event-name">${e.name}</div>
+              ${e.detail?`<div class="event-detail">${e.detail}</div>`:''}
+              ${e.tags&&e.tags.length?`<div class="tags">${makeTags(e.tags)}</div>`:''}
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+
+  if (currentMode === 'shared' && sharedUnlocked) {
+    c.querySelectorAll('.time-edit').forEach(inp => inp.removeAttribute('readonly'));
+  }
+}
 // ════════════════════════════════════════
 //  NAV CONFIG
 // ════════════════════════════════════════
