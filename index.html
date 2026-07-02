@@ -237,6 +237,11 @@ button{cursor:pointer;font-family:inherit;}
 .nav-icon{font-size:20px;line-height:1;}
 .nav-label{font-size:10px;font-weight:600;letter-spacing:.02em;}
 
+/* loading state */
+.loading-state{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:14px;}
+.loading-spinner{font-size:28px;display:block;margin-bottom:.5rem;animation:spin 1s linear infinite;}
+@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg)}}
+
 @media(max-width:380px){.food-grid{grid-template-columns:1fr;}.hero-title{font-size:28px;}.purchase-summary{grid-template-columns:1fr 1fr;}}
 </style>
 </head>
@@ -323,6 +328,8 @@ button{cursor:pointer;font-family:inherit;}
 // ════════════════════════════════════════
 let currentMode = 'personal';
 let currentScreen = 'home';
+// Track whether shared cloud data has been loaded
+let sharedDataReady = false;
 
 const API_KEY = '$2a$10$tUEGnNwl/Gz8pCUZwa6bfea6YgnnauKC7hGVKRhouNJ/xEgwIRziq';
 const JSONBIN_BIN_ID = '6a45e233f5f4af5e2951855e';
@@ -438,17 +445,42 @@ async function fetchCloudData() {
     });
     if (!res.ok) throw new Error('API Sync Failed');
     const json = await res.json();
-    cloudData.itinerary = json.record.itinerary;
-    cloudData.groupPurchases = json.record.groupPurchases;
-    localStorage.setItem('ams_shared_cache', JSON.stringify(json.record));
+    // Validate that the record has the expected shape before trusting it
+    if (json.record && Array.isArray(json.record.itinerary) && json.record.itinerary.length > 0) {
+      cloudData.itinerary = json.record.itinerary;
+    } else {
+      cloudData.itinerary = JSON.parse(JSON.stringify(DEFAULT_ITINERARY));
+    }
+    cloudData.groupPurchases = Array.isArray(json.record.groupPurchases)
+      ? json.record.groupPurchases
+      : [];
+    localStorage.setItem('ams_shared_cache', JSON.stringify({
+      itinerary: cloudData.itinerary,
+      groupPurchases: cloudData.groupPurchases
+    }));
+    sharedDataReady = true;
   } catch (e) {
     console.warn("Cloud connection error, checking local backup cache...", e);
     const backup = localStorage.getItem('ams_shared_cache');
     if (backup) {
-      const parsed = JSON.parse(backup);
-      cloudData.itinerary = parsed.itinerary;
-      cloudData.groupPurchases = parsed.groupPurchases;
+      try {
+        const parsed = JSON.parse(backup);
+        cloudData.itinerary = (Array.isArray(parsed.itinerary) && parsed.itinerary.length > 0)
+          ? parsed.itinerary
+          : JSON.parse(JSON.stringify(DEFAULT_ITINERARY));
+        cloudData.groupPurchases = Array.isArray(parsed.groupPurchases)
+          ? parsed.groupPurchases
+          : [];
+      } catch(pe) {
+        cloudData.itinerary = JSON.parse(JSON.stringify(DEFAULT_ITINERARY));
+        cloudData.groupPurchases = [];
+      }
+    } else {
+      // No cache either - use defaults so the screen always renders
+      cloudData.itinerary = JSON.parse(JSON.stringify(DEFAULT_ITINERARY));
+      cloudData.groupPurchases = [];
     }
+    sharedDataReady = true;
   }
 }
 
@@ -462,11 +494,14 @@ async function pushCloudData() {
         'X-Access-Key': API_KEY
       },
       body: JSON.stringify({
-        itinerary: cloudData.itinerary || DEFAULT_ITINERARY,
+        itinerary: cloudData.itinerary || JSON.parse(JSON.stringify(DEFAULT_ITINERARY)),
         groupPurchases: cloudData.groupPurchases || []
       })
     });
-    localStorage.setItem('ams_shared_cache', JSON.stringify(cloudData));
+    localStorage.setItem('ams_shared_cache', JSON.stringify({
+      itinerary: cloudData.itinerary,
+      groupPurchases: cloudData.groupPurchases
+    }));
     updateSyncStatus('Synced with group');
   } catch (e) {
     console.error("Cloud push failed", e);
@@ -482,9 +517,13 @@ function savePersonal(key, val) {
 }
 
 function getItinerary() {
-  if (currentMode === 'shared') return cloudData.itinerary || DEFAULT_ITINERARY;
+  if (currentMode === 'shared') {
+    // Always guaranteed non-null after fetchCloudData resolves
+    return cloudData.itinerary || JSON.parse(JSON.stringify(DEFAULT_ITINERARY));
+  }
   return loadPersonal('itinerary', JSON.parse(JSON.stringify(DEFAULT_ITINERARY)));
 }
+
 function saveItinerary(data) {
   if (currentMode === 'shared') {
     cloudData.itinerary = data;
@@ -530,6 +569,7 @@ function buildNav(navItems) {
 // ════════════════════════════════════════
 async function setMode(mode) {
   currentMode = mode;
+  sharedDataReady = false;
   document.getElementById('btn-personal').classList.toggle('active', mode==='personal');
   document.getElementById('btn-shared').classList.toggle('active', mode==='shared');
   document.getElementById('mode-badge').textContent = mode==='personal' ? '👤 Personal mode' : '👥 Shared mode';
@@ -538,16 +578,30 @@ async function setMode(mode) {
   if (mode === 'shared') {
     syncBar.style.display = 'flex';
     updateSyncStatus('Fetching group updates...');
+
+    // If itinerary is currently visible, show a loading state while fetching
+    if (currentScreen === 'itinerary') {
+      document.getElementById('itinerary-content').innerHTML =
+        '<div class="loading-state"><span class="loading-spinner">🔄</span>Loading group plan...</div>';
+    }
+    if (currentScreen === 'purchases') {
+      document.getElementById('purchases-content').innerHTML =
+        '<div class="loading-state"><span class="loading-spinner">🔄</span>Loading group spending...</div>';
+    }
+
     await fetchCloudData();
     updateSyncStatus('Synced with group');
   } else {
     syncBar.style.display = 'none';
+    sharedDataReady = true; // personal mode is always ready
   }
 
   document.getElementById('itin-sub').textContent = 'Tap times to edit';
   document.getElementById('purchases-sub').textContent = mode==='personal'
     ? 'Track your spending' : 'Group spending tracker';
+
   buildNav(mode==='personal' ? PERSONAL_NAV : SHARED_NAV);
+  // Re-render whatever screen is currently active now that data is ready
   showScreen(currentScreen);
 }
 
@@ -574,6 +628,16 @@ function showScreen(id, btn) {
   }
   window.scrollTo(0,0);
   currentScreen = id;
+
+  // In shared mode, if data isn't ready yet (still fetching), show loading
+  if (currentMode === 'shared' && !sharedDataReady && (id === 'itinerary' || id === 'purchases')) {
+    const contentEl = document.getElementById(id === 'itinerary' ? 'itinerary-content' : 'purchases-content');
+    if (contentEl) {
+      contentEl.innerHTML = '<div class="loading-state"><span class="loading-spinner">🔄</span>Loading group data...</div>';
+    }
+    return;
+  }
+
   if (RENDERERS[id]) RENDERERS[id]();
 }
 
@@ -590,6 +654,13 @@ function makeTags(tags) {
 function renderItinerary() {
   const data = getItinerary();
   const c = document.getElementById('itinerary-content');
+
+  // Safety check - should never hit this after the fixes above but belt-and-braces
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    c.innerHTML = '<div class="empty-state">No itinerary data available.</div>';
+    return;
+  }
+
   c.innerHTML = data.map((d,di) => `
     <div class="day-card">
       <div class="day-header color-${d.color}">
@@ -597,7 +668,7 @@ function renderItinerary() {
         <div><div class="day-title">${d.title}</div><div class="day-date">${d.date}</div></div>
       </div>
       <div class="events">
-        ${d.events.map((e,ei) => `
+        ${(d.events||[]).map((e,ei) => `
           <div class="event">
             <input class="time-edit" type="text" value="${e.time}" data-di="${di}" data-ei="${ei}"
               onblur="onTimeBlur(this)">
@@ -723,7 +794,7 @@ function renderPurchases() {
         <input class="form-input" id="pi-amount" placeholder="£" type="number" min="0" step="0.01" style="max-width:80px">
       </div>
       <div class="form-row">
-        <select class="form-select" id="pi-cat">${SPEND_CATS.map(c=>`<option>${c}</option>`).join('')}</select>
+        <select class="form-select" id="pi-cat">${SPEND_CATS.map(cat=>`<option>${cat}</option>`).join('')}</select>
         <select class="form-select" id="pi-type">
           <option value="spent">💸 Spent</option>
           <option value="sent">💳 Sent/paid back</option>
