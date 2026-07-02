@@ -216,22 +216,6 @@ button{cursor:pointer;font-family:inherit;}
 .notes-save{margin-top:8px;padding:9px 18px;border:none;border-radius:10px;background:var(--blue);color:#fff;font-size:13px;font-weight:700;}
 
 /* ═══════════════════════════════════
-   PASSWORD MODAL
-═══════════════════════════════════ */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:1.5rem;}
-.modal-overlay.hidden{display:none;}
-.modal-box{background:var(--card);border-radius:var(--r);padding:1.5rem;width:100%;max-width:320px;}
-.modal-title{font-size:18px;font-weight:700;margin-bottom:.4rem;}
-.modal-sub{font-size:13px;color:var(--muted);margin-bottom:1rem;}
-.modal-input{width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:10px;font-size:16px;font-family:inherit;letter-spacing:3px;text-align:center;margin-bottom:.75rem;}
-.modal-input:focus{outline:none;border-color:var(--blue);}
-.modal-error{font-size:13px;color:var(--coral);margin-bottom:.75rem;display:none;}
-.modal-btns{display:flex;gap:8px;}
-.modal-btn{flex:1;padding:10px;border:none;border-radius:10px;font-size:14px;font-weight:700;}
-.modal-confirm{background:var(--blue);color:#fff;}
-.modal-cancel{background:var(--bg);color:var(--text);}
-
-/* ═══════════════════════════════════
    INFO
 ═══════════════════════════════════ */
 .info-section{margin-bottom:1.25rem;}
@@ -264,24 +248,11 @@ button{cursor:pointer;font-family:inherit;}
   <button class="mode-btn" id="btn-shared" onclick="setMode('shared')">👥 Shared</button>
 </div>
 
-<div class="modal-overlay hidden" id="pw-modal">
-  <div class="modal-box">
-    <div class="modal-title">🔐 Shared edit</div>
-    <div class="modal-sub">Enter the group password to change shared times</div>
-    <input class="modal-input" type="password" id="pw-input" placeholder="••••" maxlength="10">
-    <div class="modal-error" id="pw-error">Wrong password — try again</div>
-    <div class="modal-btns">
-      <button class="modal-btn modal-cancel" onclick="closePwModal()">Cancel</button>
-      <button class="modal-btn modal-confirm" onclick="checkPassword()">Unlock</button>
-    </div>
-  </div>
-</div>
-
 <div class="screen active" id="home">
   <div class="home-hero">
     <div class="hero-flag">🇳🇱</div>
     <div class="hero-title">Amsterdam</div>
-    <div class="hero-sub">3 – 7 July 2026 · 8 people</div>
+    <div class="hero-sub">3 - 7 July 2026 · 8 people</div>
     <div class="personal-badge" id="mode-badge">👤 Personal mode</div>
   </div>
   <div id="shared-sync-bar" class="sync-bar" style="display:none">
@@ -295,7 +266,7 @@ button{cursor:pointer;font-family:inherit;}
       <div class="info-tile"><div class="info-label">Checkout</div><div class="info-val">Mon 6 Jul</div><div class="info-detail">Before 10am</div></div>
       <div class="info-tile"><div class="info-label">Budget</div><div class="info-val">~£200</div><div class="info-detail">Per person</div></div>
     </div>
-    <div class="alert-card">✅ All 8 leaving together on the 7th — everyone does the final overnight!</div>
+    <div class="alert-card">✅ All 8 leaving together on the 7th - everyone does the final overnight!</div>
     <div class="section-label">Book these NOW</div>
     <div class="todo-card">
       <div class="todo-item"><span class="todo-icon">🌆</span><div><div class="todo-name">City Activity Day</div><div class="todo-detail">Decide activities together on the day</div></div><span class="todo-status pending">Flexible</span></div>
@@ -314,7 +285,7 @@ button{cursor:pointer;font-family:inherit;}
 <div class="screen" id="itinerary">
   <div class="screen-header">
     <h2>📅 Itinerary</h2>
-    <div class="screen-sub" id="itin-sub">Tap times to edit (personal mode)</div>
+    <div class="screen-sub" id="itin-sub">Tap times to edit</div>
   </div>
   <div class="screen-body" id="itinerary-content"></div>
 </div>
@@ -325,7 +296,7 @@ button{cursor:pointer;font-family:inherit;}
 </div>
 
 <div class="screen" id="food">
-  <div class="screen-header"><h2>🍽️ Food</h2><div class="screen-sub">All optional — pick on the day</div></div>
+  <div class="screen-header"><h2>🍽️ Food</h2><div class="screen-sub">All optional - pick on the day</div></div>
   <div class="screen-body" id="food-content"></div>
 </div>
 
@@ -350,13 +321,11 @@ button{cursor:pointer;font-family:inherit;}
 // ════════════════════════════════════════
 //  STATE & CONFIGURATION
 // ════════════════════════════════════════
-let currentMode = 'personal'; 
-let sharedUnlocked = false;
-let pendingEditEl = null;
+let currentMode = 'personal';
 let currentScreen = 'home';
 
 const API_KEY = '$2a$10$tUEGnNwl/Gz8pCUZwa6bfea6YgnnauKC7hGVKRhouNJ/xEgwIRziq';
-const JSONBIN_BIN_ID = '6a45e233f5f4af5e2951855e'; 
+const JSONBIN_BIN_ID = '6a45e233f5f4af5e2951855e';
 
 let cloudData = {
   itinerary: null,
@@ -379,71 +348,71 @@ const DEFAULT_ITINERARY = [
     ]},
   { day:"Day 2", date:"Saturday 4 July", title:"Amsterdam City Activities", color:"purple",
     events:[
-      {id:"d2e1", time:"Morning", name:"Free morning — chill at bungalow", detail:"Relax, breakfast and get ready for the day", tags:["free"]},
+      {id:"d2e1", time:"Morning", name:"Free morning - chill at bungalow", detail:"Relax, breakfast and get ready for the day", tags:["free"]},
       {id:"d2e2", time:"Afternoon", name:"Amsterdam City Activity Day", detail:"Choose activities together depending on what everyone feels like", tags:["activity"]},
-      {id:"d2e3", time:"Afternoon", name:"Possible activities", detail:"WONDR • Mini Golf • VR Racing • Museums • Canal Cruise • Shopping • Red Light District • Arcades • Cafés", tags:["activity"]},
+      {id:"d2e3", time:"Afternoon", name:"Possible activities", detail:"WONDR · Mini Golf · VR Racing · Museums · Canal Cruise · Shopping · Red Light District · Arcades · Cafés", tags:["activity"]},
       {id:"d2e4", time:"Evening", name:"Dinner in Amsterdam", detail:"Pick somewhere from the Food tab", tags:["food"]},
       {id:"d2e5", time:"Night", name:"Chicago Social Club", detail:"£10pp", tags:["club"]}
     ]},
   { day:"Day 3", date:"Sunday 5 July", title:"Amsterdam + Tiki Pool", color:"teal",
     events:[
       {id:"d3e1", time:"Morning", name:"Free morning in Amsterdam", detail:"OBA Café Oosterdok rooftop · Albert Cuijp Market", tags:["free"]},
-      {id:"d3e2", time:"Afternoon", name:"Lunch stop", detail:"Laurens or Friet Fries — see Food tab", tags:["food"]},
-      {id:"d3e3", time:"~16:00", name:"Head to Duinrell (Wassenaar)", detail:"~1 hour from Amsterdam — leave by 16:00 sharp", tags:["travel"]},
-      {id:"d3e4", time:"17:00", name:"Tiki Pool at Duinrell", detail:"€27.50pp · 4 hours · Arrival 17:00–17:15 · Until ~21:00", tags:["activity","booked"]},
-      {id:"d3e5", time:"~21:00", name:"Dinner — Bourenjongen", detail:"£17pp · 2 cakes 🎂", tags:["food"]},
+      {id:"d3e2", time:"Afternoon", name:"Lunch stop", detail:"Laurens or Friet Fries - see Food tab", tags:["food"]},
+      {id:"d3e3", time:"~16:00", name:"Head to Duinrell (Wassenaar)", detail:"~1 hour from Amsterdam - leave by 16:00 sharp", tags:["travel"]},
+      {id:"d3e4", time:"17:00", name:"Tiki Pool at Duinrell", detail:"€27.50pp · 4 hours · Arrival 17:00-17:15 · Until ~21:00", tags:["activity","booked"]},
+      {id:"d3e5", time:"~21:00", name:"Dinner - Bourenjongen", detail:"£17pp · 2 cakes 🎂", tags:["food"]},
       {id:"d3e6", time:"Night", name:"Escape", detail:"£9pp", tags:["club"]}
     ]},
   { day:"Day 4", date:"Monday 6 July", title:"Checkout + Night Canal Cruise", color:"coral",
     events:[
-      {id:"d4e1", time:"By 10:00", name:"Check out of bungalow — all 8", detail:"", tags:["deadline"]},
+      {id:"d4e1", time:"By 10:00", name:"Check out of bungalow - all 8", detail:"", tags:["deadline"]},
       {id:"d4e2", time:"Morning", name:"Head into Amsterdam with bags", detail:"", tags:["travel"]},
       {id:"d4e3", time:"Afternoon", name:"Jordaan wander + OBA rooftop", detail:"Last free explore", tags:["free"]},
       {id:"d4e4", time:"Evening", name:"Food stop", detail:"Canela / Friet Fries / Le Smash", tags:["food"]},
-      {id:"d4e5", time:"~21:00", name:"Night canal cruise — all 8 🛶", detail:"£15pp · Bridges lit after dark", tags:["activity"]},
-      {id:"d4e6", time:"~22:30", name:"Leidseplein bar crawl", detail:"Paradiso / Melkweg — check Mon listings · Til 3–4am", tags:["club"]},
-      {id:"d4e7", time:"Late", name:"Jordaan canal walk", detail:"Stunning at night — free", tags:["free"]},
+      {id:"d4e5", time:"~21:00", name:"Night canal cruise - all 8 🛶", detail:"£15pp · Bridges lit after dark", tags:["activity"]},
+      {id:"d4e6", time:"~22:30", name:"Leidseplein bar crawl", detail:"Paradiso / Melkweg - check Mon listings · Til 3-4am", tags:["club"]},
+      {id:"d4e7", time:"Late", name:"Jordaan canal walk", detail:"Stunning at night - free", tags:["free"]},
       {id:"d4e8", time:"~02:00", name:"Head to Amsterdam Centraal", detail:"Rest, charge, 24hr food inside", tags:["travel"]},
-      {id:"d4e9", time:"06:40", name:"Eurostar departs — all 8 🎉", detail:"Arrives London St Pancras 09:57", tags:["travel"]}
+      {id:"d4e9", time:"06:40", name:"Eurostar departs - all 8 🎉", detail:"Arrives London St Pancras 09:57", tags:["travel"]}
     ]}
 ];
 
 const ACTIVITIES = [
   {emoji:"🎨", name:"Wondr Experience", date:"Friday 3 July", price:"£21pp", duration:"Unlimited time", location:"16 mins from Centraal", booked:false, note:"Immersive art experience. Perfect to do right after arriving while waiting for bungalow check-in at 4pm.", badge:"activity", badgeColor:"purple"},
   {
-emoji:"🌆",
-name:"Amsterdam City Activity Day",
-date:"Saturday 4 July",
-price:"Flexible",
-duration:"Most of the afternoon",
-location:"Central Amsterdam",
-booked:false,
-note:"Spend the day exploring Amsterdam together. Choose activities depending on what everyone feels like doing. Ideas include WONDR, mini golf, VR racing, museums, canal cruises, shopping, cafés, arcades, the Red Light District and more.",
-badge:"Decide on the day",
-badgeColor:"purple"
-},
-  {emoji:"🏊", name:"Tiki Pool (Duinrell)", date:"Sunday 5 July", price:"€27.50pp", duration:"4 hours · 17:00–21:00", location:"~1hr from Amsterdam (Wassenaar)", booked:true, note:"Arrival slot 17:00–17:15. Leave Amsterdam by 16:00 sharp. Indoor pool with slides and attractions.", badge:"Booked ✓", badgeColor:"teal"},
+    emoji:"🌆",
+    name:"Amsterdam City Activity Day",
+    date:"Saturday 4 July",
+    price:"Flexible",
+    duration:"Most of the afternoon",
+    location:"Central Amsterdam",
+    booked:false,
+    note:"Spend the day exploring Amsterdam together. Choose activities depending on what everyone feels like doing. Ideas include WONDR, mini golf, VR racing, museums, canal cruises, shopping, cafés, arcades, the Red Light District and more.",
+    badge:"Decide on the day",
+    badgeColor:"purple"
+  },
+  {emoji:"🏊", name:"Tiki Pool (Duinrell)", date:"Sunday 5 July", price:"€27.50pp", duration:"4 hours · 17:00-21:00", location:"~1hr from Amsterdam (Wassenaar)", booked:true, note:"Arrival slot 17:00-17:15. Leave Amsterdam by 16:00 sharp. Indoor pool with slides and attractions.", badge:"Booked ✓", badgeColor:"teal"},
   {emoji:"🛶", name:"Night Canal Cruise", date:"Monday 6 July", price:"£15pp", duration:"~1.5 hours", location:"Amsterdam Centraal area", booked:false, note:"Booked for ~9pm after the group splits. Canals are stunning after dark with all the bridge lights. Best activity of the trip.", badge:"activity", badgeColor:"purple"},
 ];
 
 const FOOD_PLACES = [
   {name:"Chun", distance:"11 mins", price:"~£14pp", note:"Great first-night dinner option"},
   {name:"Wd Bhurs", distance:"10 mins", price:"~£9pp", note:"Quick, easy evening meal"},
-  {name:"Friet Fries", distance:"20 mins", price:"~£8pp", note:"Classic Dutch fries — great any day"},
+  {name:"Friet Fries", distance:"20 mins", price:"~£8pp", note:"Classic Dutch fries - great any day"},
   {name:"Le Smash", distance:"15 mins", price:"~£10pp", note:"Great dinner after a day exploring Amsterdam"},
-  {name:"Canela", distance:"15 mins", price:"~£8pp", note:"Casual, solid — works any evening"},
+  {name:"Canela", distance:"15 mins", price:"~£8pp", note:"Casual, solid - works any evening"},
   {name:"Laurens", distance:"15 mins", price:"~£7pp", note:"Cheapest sit-down on the list"},
-  {name:"Bourenjongen", distance:"13 mins", price:"~£17pp", note:"2 cakes — post-Tiki Pool Sunday treat 🎂"},
-  {name:"Albert Heijn", distance:"Multiple spots", price:"Budget — varies", note:"Cheapest supermarket — stock the bungalow on arrival"},
+  {name:"Bourenjongen", distance:"13 mins", price:"~£17pp", note:"2 cakes - post-Tiki Pool Sunday treat 🎂"},
+  {name:"Albert Heijn", distance:"Multiple spots", price:"Budget - varies", note:"Cheapest supermarket - stock the bungalow on arrival"},
 ];
 
 const CLUBS = [
-  {name:"Satellite Sportscafé", type:"Bar / Sports café", typeClass:"bar", location:"15 mins from Centraal", price:"~£19pp", note:"Good first-night spot — lively but not overwhelming.", suggested:"Friday 3 July (Night 1)"},
+  {name:"Satellite Sportscafé", type:"Bar / Sports café", typeClass:"bar", location:"15 mins from Centraal", price:"~£19pp", note:"Good first-night spot - lively but not overwhelming.", suggested:"Friday 3 July (Night 1)"},
   {name:"Chicago Social Club", type:"Club", typeClass:"club", location:"15 mins from Centraal", price:"~£10pp", note:"Solid mid-trip night out. Popular with groups, good on Saturdays.", suggested:"Saturday 4 July (after City Activity Day)"},
   {name:"Escape", type:"Club", typeClass:"club", location:"10 mins from Centraal", price:"~£9pp", note:"One of Amsterdam's biggest clubs. Sunday nights are great here.", suggested:"Sunday 5 July (after Tiki Pool)"},
-  {name:"Paradiso", type:"Live music venue", typeClass:"venue", location:"Leidseplein area", price:"Varies by event", note:"Iconic Amsterdam venue — check what's on Monday 6 July.", suggested:"Monday 6 July (final night)"},
-  {name:"Melkweg", type:"Live music venue", typeClass:"venue", location:"Leidseplein area", price:"Varies by event", note:"Right next to Paradiso — check their Monday listings too.", suggested:"Monday 6 July (final night)"},
-  {name:"Leidseplein bars", type:"Bar strip", typeClass:"bar", location:"Central Amsterdam", price:"Varies", note:"Amsterdam's liveliest square. Bars open til 3–4am — perfect for killing time before the 06:40 train.", suggested:"Mon 6 Jul overnight → 7th"},
+  {name:"Paradiso", type:"Live music venue", typeClass:"venue", location:"Leidseplein area", price:"Varies by event", note:"Iconic Amsterdam venue - check what's on Monday 6 July.", suggested:"Monday 6 July (final night)"},
+  {name:"Melkweg", type:"Live music venue", typeClass:"venue", location:"Leidseplein area", price:"Varies by event", note:"Right next to Paradiso - check their Monday listings too.", suggested:"Monday 6 July (final night)"},
+  {name:"Leidseplein bars", type:"Bar strip", typeClass:"bar", location:"Central Amsterdam", price:"Varies", note:"Amsterdam's liveliest square. Bars open til 3-4am - perfect for killing time before the 06:40 train.", suggested:"Mon 6 Jul overnight → 7th"},
 ];
 
 const WAKE_DAYS = ["Fri 3 Jul","Sat 4 Jul","Sun 5 Jul","Mon 6 Jul","Tue 7 Jul"];
@@ -464,7 +433,7 @@ const TAG_CFG = {
 // ════════════════════════════════════════
 async function fetchCloudData() {
   try {
-    const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+    const res = await fetch(`[api.jsonbin.io](https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest)`, {
       headers: { 'X-Access-Key': API_KEY }
     });
     if (!res.ok) throw new Error('API Sync Failed');
@@ -484,9 +453,9 @@ async function fetchCloudData() {
 }
 
 async function pushCloudData() {
-  updateSyncStatus('Saving…');
+  updateSyncStatus('Saving...');
   try {
-    await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+    await fetch(`[api.jsonbin.io](https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID})`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -529,22 +498,22 @@ function saveItinerary(data) {
 //  NAV CONFIG
 // ════════════════════════════════════════
 const PERSONAL_NAV = [
-  {id:'home',     icon:'🏠', label:'Home'},
+  {id:'home', icon:'🏠', label:'Home'},
   {id:'itinerary',icon:'📅', label:'Plan'},
   {id:'activities',icon:'🎯',label:'Activities'},
-  {id:'food',     icon:'🍽️', label:'Food'},
-  {id:'clubs',    icon:'🎉', label:'Clubs'},
+  {id:'food', icon:'🍽️', label:'Food'},
+  {id:'clubs', icon:'🎉', label:'Clubs'},
   {id:'purchases',icon:'💸', label:'Spending'},
-  {id:'info',     icon:'ℹ️',  label:'Info'},
+  {id:'info', icon:'ℹ️', label:'Info'},
 ];
 const SHARED_NAV = [
-  {id:'home',     icon:'🏠', label:'Home'},
+  {id:'home', icon:'🏠', label:'Home'},
   {id:'itinerary',icon:'📅', label:'Plan'},
   {id:'activities',icon:'🎯',label:'Activities'},
-  {id:'food',     icon:'🍽️', label:'Food'},
-  {id:'clubs',    icon:'🎉', label:'Clubs'},
+  {id:'food', icon:'🍽️', label:'Food'},
+  {id:'clubs', icon:'🎉', label:'Clubs'},
   {id:'purchases',icon:'💸', label:'Group £'},
-  {id:'info',     icon:'ℹ️',  label:'Info'},
+  {id:'info', icon:'ℹ️', label:'Info'},
 ];
 
 function buildNav(navItems) {
@@ -561,11 +530,10 @@ function buildNav(navItems) {
 // ════════════════════════════════════════
 async function setMode(mode) {
   currentMode = mode;
-  sharedUnlocked = false;
   document.getElementById('btn-personal').classList.toggle('active', mode==='personal');
   document.getElementById('btn-shared').classList.toggle('active', mode==='shared');
   document.getElementById('mode-badge').textContent = mode==='personal' ? '👤 Personal mode' : '👥 Shared mode';
-  
+
   const syncBar = document.getElementById('shared-sync-bar');
   if (mode === 'shared') {
     syncBar.style.display = 'flex';
@@ -576,9 +544,7 @@ async function setMode(mode) {
     syncBar.style.display = 'none';
   }
 
-  document.getElementById('itin-sub').textContent = mode==='personal'
-    ? 'Tap times to edit (personal mode)'
-    : '🔐 Password required to edit shared times';
+  document.getElementById('itin-sub').textContent = 'Tap times to edit';
   document.getElementById('purchases-sub').textContent = mode==='personal'
     ? 'Track your spending' : 'Group spending tracker';
   buildNav(mode==='personal' ? PERSONAL_NAV : SHARED_NAV);
@@ -602,43 +568,14 @@ function showScreen(id, btn) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   if (btn) btn.classList.add('active');
-  else { const b = document.querySelector(`.nav-btn[onclick*="'${id}'"]`); if(b) b.classList.add('active'); }
+  else {
+    const b = document.querySelector(`.nav-btn[onclick*="'${id}'"]`);
+    if (b) b.classList.add('active');
+  }
   window.scrollTo(0,0);
   currentScreen = id;
   if (RENDERERS[id]) RENDERERS[id]();
 }
-
-// ════════════════════════════════════════
-//  PASSWORD SECURITY System
-// ════════════════════════════════════════
-function requestUnlock(el) {
-  pendingEditEl = el;
-  document.getElementById('pw-modal').classList.remove('hidden');
-  document.getElementById('pw-input').value = '';
-  document.getElementById('pw-error').style.display = 'none';
-  setTimeout(()=>document.getElementById('pw-input').focus(), 100);
-}
-function closePwModal() {
-  document.getElementById('pw-modal').classList.add('hidden');
-  pendingEditEl = null;
-}
-function checkPassword() {
-  const val = document.getElementById('pw-input').value.trim().toUpperCase();
-  if (val === 'GREAT') {
-    sharedUnlocked = true;
-    closePwModal();
-    if (pendingEditEl) { 
-      pendingEditEl.removeAttribute('readonly'); 
-      pendingEditEl.focus(); 
-      pendingEditEl = null; 
-    }
-    renderItinerary();
-  } else {
-    document.getElementById('pw-error').style.display = 'block';
-    document.getElementById('pw-input').value = '';
-  }
-}
-document.getElementById('pw-input').addEventListener('keydown', e => { if(e.key==='Enter') checkPassword(); });
 
 // ════════════════════════════════════════
 //  ITINERARY VIEWS
@@ -652,7 +589,6 @@ function makeTags(tags) {
 
 function renderItinerary() {
   const data = getItinerary();
-  const canEdit = currentMode === 'personal' || sharedUnlocked;
   const c = document.getElementById('itinerary-content');
   c.innerHTML = data.map((d,di) => `
     <div class="day-card">
@@ -664,10 +600,7 @@ function renderItinerary() {
         ${d.events.map((e,ei) => `
           <div class="event">
             <input class="time-edit" type="text" value="${e.time}" data-di="${di}" data-ei="${ei}"
-              ${canEdit?'':'readonly'}
-              onfocus="onTimeFocus(this)"
-              onblur="onTimeBlur(this)"
-            >
+              onblur="onTimeBlur(this)">
             <div class="event-body">
               <div class="event-name">${e.name}</div>
               ${e.detail?`<div class="event-detail">${e.detail}</div>`:''}
@@ -676,13 +609,6 @@ function renderItinerary() {
           </div>`).join('')}
       </div>
     </div>`).join('');
-}
-
-function onTimeFocus(el) {
-  if (currentMode === 'shared' && !sharedUnlocked) {
-    el.blur();
-    requestUnlock(el);
-  }
 }
 
 function onTimeBlur(el) {
@@ -697,7 +623,7 @@ function onTimeBlur(el) {
 function updateSyncStatus(text) {
   const dot = document.getElementById('sync-dot');
   const txt = document.getElementById('sync-status');
-  if (text === 'Saving…' || text === 'Fetching group updates...') {
+  if (text === 'Saving...' || text === 'Fetching group updates...') {
     dot.classList.add('syncing');
   } else {
     dot.classList.remove('syncing');
@@ -728,7 +654,8 @@ function renderActivities() {
           ${bookedHtml}
           <div class="act-note">${a.note}</div>
         </div>
-      </div>`;}).join('');
+      </div>`;
+  }).join('');
 }
 
 // ════════════════════════════════════════
@@ -807,7 +734,7 @@ function renderPurchases() {
     <div class="section-label">History</div>
     <div class="purchase-list" id="purchase-list">
       ${items.length === 0
-        ? `<div class="empty-state">No entries yet — add your first purchase above 👆</div>`
+        ? `<div class="empty-state">No entries yet - add your first purchase above 👆</div>`
         : items.slice().reverse().map((item,ri) => {
             const i = items.length-1-ri;
             const spent = item.type==='spent';
