@@ -27,24 +27,21 @@ const itinerary = [
   }
 ];
 
+// SCREEN SWITCHING
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 
   if (id === "itinerary") {
-    setTimeout(renderItinerary, 50);
+    renderItinerary();
   }
 }
 
+// RENDER ITINERARY
 function renderItinerary() {
   const container = document.getElementById("itinerary-content");
 
-  if (!container) {
-    console.log("No itinerary container found");
-    return;
-  }
-
-  console.log("Rendering itinerary...");
+  if (!container) return;
 
   container.innerHTML = itinerary.map(day => `
     <div class="card">
@@ -56,7 +53,7 @@ function renderItinerary() {
   `).join("");
 }
 
-// 🔥 FORCE INITIAL LOAD SAFETY
+// optional: safe initial load
 document.addEventListener("DOMContentLoaded", () => {
   console.log("App loaded");
 });
