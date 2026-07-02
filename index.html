@@ -8,10 +8,32 @@
 </head>
 <body>
 
-  <div class="app">
-    <h1>Amsterdam Trip 🚀</h1>
-    <p>Your live itinerary app is running</p>
+  <div class="screen active" id="home">
+    <h1>🏠 Home</h1>
+    <p>Amsterdam Trip App is running</p>
   </div>
+
+  <div class="screen" id="itinerary">
+    <h1>📅 Itinerary</h1>
+    <p>Coming soon</p>
+  </div>
+
+  <div class="screen" id="food">
+    <h1>🍔 Food</h1>
+    <p>Coming soon</p>
+  </div>
+
+  <div class="screen" id="info">
+    <h1>ℹ️ Info</h1>
+    <p>Coming soon</p>
+  </div>
+
+  <nav class="bottom-nav">
+    <button onclick="showScreen('home')">Home</button>
+    <button onclick="showScreen('itinerary')">Itinerary</button>
+    <button onclick="showScreen('food')">Food</button>
+    <button onclick="showScreen('info')">Info</button>
+  </nav>
 
   <script src="script.js"></script>
 </body>
