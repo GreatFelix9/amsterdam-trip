@@ -2,128 +2,121 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Amsterdam 🇳🇱 July 2026</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amsterdam 2026 Planner</title>
 <style>
-:root {
-  --bg: #f4f3f0; --card: #ffffff; --border: #e4e3df; --text: #1a1a18;
-  --muted: #888; --blue: #185FA5; --teal: #0F6E56; --teal-bg: #E1F5EE;
-  --amber: #854F0B; --amber-bg: #FAEEDA; --nav-h: 64px; --r: 14px;
-}
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);padding-bottom:var(--nav-h);min-height:100vh;}
-.mode-bar{display:flex;background:#1a1a18;padding:10px 12px 0;gap:6px;}
-.mode-btn{flex:1;padding:8px;border:none;border-radius:10px 10px 0 0;font-size:13px;font-weight:700;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);}
-.mode-btn.active{background:#fff;color:#1a1a18;}
-.screen{display:none;} .screen.active{display:block;}
-.screen-header{background:var(--card);padding:1rem;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;}
-.screen-body{padding:1rem;}
-.todo-item{display:flex;align-items:center;padding:1rem;border-bottom:1px solid var(--border);background:white;}
-.status-pill{font-size:11px;padding:4px 8px;border-radius:12px;margin-left:auto;cursor:pointer;}
-.status-booked{background:var(--teal-bg);color:var(--teal);}
-.status-todo{background:var(--amber-bg);color:var(--amber);}
-.edit-ctrl{font-size:10px;color:var(--blue);margin-top:4px;cursor:pointer;}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:1.5rem;z-index:999;}
-.hidden{display:none;}
-.modal-box{background:white;padding:1.5rem;border-radius:var(--r);width:100%;max-width:300px;}
-.user-count{font-size:12px;color:var(--muted);text-align:right;padding:5px 1rem;}
+    body { font-family: sans-serif; background: #f4f3f0; padding: 20px; }
+    .card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #ddd; }
+    .hidden { display: none; }
+    button { padding: 8px 12px; cursor: pointer; }
+    .item-list { list-style: none; padding: 0; }
 </style>
 </head>
 <body>
 
-<div class="mode-bar">
-  <button class="mode-btn active" id="btn-personal" onclick="setMode('personal')">👤 Personal</button>
-  <button class="mode-btn" id="btn-shared" onclick="setMode('shared')">👥 Shared</button>
+<div id="user-setup">
+    <h2>Select Your Account</h2>
+    <select id="user-select" onchange="switchUser()">
+        <option value="">-- Choose User --</option>
+        <option value="Great">Great</option><option value="Lashawn">Lashawn</option>
+        <option value="Kethan">Kethan</option><option value="Tabs">Tabs</option>
+        <option value="Shadrik">Shadrik</option><option value="Deniz">Deniz</option>
+        <option value="Hamilton">Hamilton</option><option value="Andrew">Andrew</option>
+    </select>
 </div>
 
-<div id="user-counter" class="user-count" style="display:none;">👥 Users online: 1</div>
+<div id="main-app" class="hidden">
+    <button onclick="logout()">Logout</button>
+    <h3>Logged in as: <span id="user-display"></span></h3>
+    
+    <div class="card">
+        <h4>Budget Tracker</h4>
+        Current Budget: £<input type="number" id="budget-input" onchange="syncData()">
+    </div>
 
-<div class="modal-overlay hidden" id="pw-modal">
-  <div class="modal-box">
-    <h3>Enter Password</h3>
-    <input type="password" id="pw-input" style="width:100%;padding:8px;margin:10px 0;">
-    <button onclick="checkPassword()">Unlock</button>
-    <button onclick="document.getElementById('pw-modal').classList.add('hidden')">Cancel</button>
-  </div>
-</div>
+    <div class="card">
+        <h4>Minimum Costs</h4>
+        <div id="min-costs"></div>
+    </div>
 
-<div class="screen active" id="home">
-  <div class="screen-header"><h2>Amsterdam 2026</h2></div>
-  <div class="screen-body">
-    <div id="todo-list"></div>
-  </div>
+    <div class="card">
+        <h4>Add Custom Spots</h4>
+        <input type="text" id="new-item-input" placeholder="Food or Club name">
+        <button onclick="addCustom()">Add</button>
+        <ul id="custom-list" class="item-list"></ul>
+    </div>
 </div>
 
 <script>
-let currentMode = 'personal';
-let sharedUnlocked = false;
+const BIN_ID = 'YOUR_BIN_ID';
+const API_KEY = 'YOUR_API_KEY';
+let currentUser = "";
+let masterData = { users: {} };
 
-// Sample Activity List
-let activities = [
-    {id: 1, name: "Walibi Holland", booked: false, time: "14:30", day: "Day 2"},
-    {id: 2, name: "Tiki Pool (Duinrell)", booked: true, time: "17:00", day: "Day 3"}
-];
-
-function setMode(mode) {
-    currentMode = mode;
-    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('btn-'+mode).classList.add('active');
+async function switchUser() {
+    currentUser = document.getElementById('user-select').value;
+    if(!currentUser) return;
     
-    if(mode === 'shared') {
-        document.getElementById('user-counter').style.display = 'block';
-    } else {
-        document.getElementById('user-counter').style.display = 'none';
-    }
-    renderTodos();
+    // Fetch latest from JSONBin
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: {'X-Access-Key': API_KEY} });
+    const json = await res.json();
+    masterData = json.record;
+
+    document.getElementById('user-setup').classList.add('hidden');
+    document.getElementById('main-app').classList.remove('hidden');
+    document.getElementById('user-display').innerText = currentUser;
+    render();
 }
 
-function renderTodos() {
-    const list = document.getElementById('todo-list');
-    list.innerHTML = activities.map(a => `
-        <div class="todo-item">
-            <div>
-                <strong>${a.name}</strong><br>
-                <input type="text" value="${a.time}" onchange="updateActivity(${a.id}, 'time', this.value)"> at ${a.day}
-            </div>
-            <div class="status-pill ${a.booked ? 'status-booked' : 'status-todo'}" onclick="toggleBooked(${a.id})">
-                ${a.booked ? 'Booked ✓' : 'To Do'}
-            </div>
-        </div>
+function render() {
+    const user = masterData.users[currentUser];
+    document.getElementById('budget-input').value = user.budget || 0;
+    
+    // Render Min Costs
+    const minCosts = [{n:"Tiki Pool", p:27.5}, {n:"Walibi", p:23}, {n:"Canal", p:20}];
+    document.getElementById('min-costs').innerHTML = minCosts.map(item => `
+        <div><input type="checkbox" ${user.removedCosts.includes(item.n)?'':'checked'} 
+        onchange="toggleCost('${item.n}')"> ${item.n} (£${item.p})</div>
+    `).join('');
+
+    // Render Custom
+    document.getElementById('custom-list').innerHTML = user.custom.map((c, idx) => `
+        <li>${c} <button onclick="removeCustom(${idx})">x</button></li>
     `).join('');
 }
 
-function toggleBooked(id) {
-    const act = activities.find(a => a.id === id);
-    act.booked = !act.booked;
-    renderTodos();
+async function syncData() {
+    masterData.users[currentUser].budget = document.getElementById('budget-input').value;
+    await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json', 'X-Access-Key': API_KEY},
+        body: JSON.stringify(masterData)
+    });
 }
 
-function updateActivity(id, field, val) {
-    const act = activities.find(a => a.id === id);
-    act[field] = val;
-    console.log("Updated", act);
+function toggleCost(name) {
+    let user = masterData.users[currentUser];
+    if(user.removedCosts.includes(name)) user.removedCosts = user.removedCosts.filter(n => n !== name);
+    else user.removedCosts.push(name);
+    syncData();
 }
 
-// Password Protection for Shared
-function navigateToPlan() {
-    if(currentMode === 'shared' && !sharedUnlocked) {
-        document.getElementById('pw-modal').classList.remove('hidden');
-    } else {
-        // Navigate to plan...
-    }
+function addCustom() {
+    const val = document.getElementById('new-item-input').value;
+    if(!val) return;
+    masterData.users[currentUser].custom.push(val);
+    document.getElementById('new-item-input').value = '';
+    render();
+    syncData();
 }
 
-function checkPassword() {
-    const val = document.getElementById('pw-input').value;
-    if(val === "1234") { // Set your password
-        sharedUnlocked = true;
-        document.getElementById('pw-modal').classList.add('hidden');
-    } else {
-        alert("Wrong Password");
-    }
+function removeCustom(idx) {
+    masterData.users[currentUser].custom.splice(idx, 1);
+    render();
+    syncData();
 }
 
-renderTodos();
+function logout() { location.reload(); }
 </script>
 </body>
 </html>
