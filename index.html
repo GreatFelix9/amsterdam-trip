@@ -3,38 +3,144 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Amsterdam Trip App</title>
+  <title>Amsterdam 🇳🇱 July 2026</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- Screens -->
+  <!-- HOME -->
   <div class="screen active" id="home">
-    <h1>🏠 Home</h1>
-    <p>Welcome to your Amsterdam Trip App</p>
+    <div class="home-hero">
+      <div class="hero-flag">🇳🇱</div>
+      <h1 class="hero-title">Amsterdam</h1>
+      <p class="hero-sub">3 – 7 July 2026 · 8 people</p>
+    </div>
+
+    <div class="home-cards">
+      <div class="info-row">
+        <div class="info-tile">
+          <div class="info-label">Outbound</div>
+          <div class="info-val">Fri 3 Jul</div>
+          <div class="info-detail">06:16 → 11:20</div>
+        </div>
+        <div class="info-tile">
+          <div class="info-label">Return</div>
+          <div class="info-val">Tue 7 Jul</div>
+          <div class="info-detail">06:40 → 09:57</div>
+        </div>
+        <div class="info-tile">
+          <div class="info-label">Checkout</div>
+          <div class="info-val">Mon 6 Jul</div>
+          <div class="info-detail">Before 10am</div>
+        </div>
+        <div class="info-tile">
+          <div class="info-label">Budget</div>
+          <div class="info-val">~£332</div>
+          <div class="info-detail">Per person</div>
+        </div>
+      </div>
+
+      <div class="alert-card">
+        ✅ All 8 leaving together on the 7th — everyone does the final overnight!
+      </div>
+
+      <div class="section-label">Book these NOW</div>
+      <div class="todo-card">
+        <div class="todo-item">
+          <span class="todo-icon">🎢</span>
+          <div>
+            <div class="todo-name">Walibi Holland</div>
+            <div class="todo-detail">€23pp · Half-day · Buy online before Saturday</div>
+          </div>
+          <span class="todo-status pending">To do</span>
+        </div>
+        <div class="todo-item">
+          <span class="todo-icon">🏊</span>
+          <div>
+            <div class="todo-name">Tiki Pool (Duinrell)</div>
+            <div class="todo-detail">€27.50pp · 17:00 slot · Sun 5 Jul</div>
+          </div>
+          <span class="todo-status done">Booked ✓</span>
+        </div>
+        <div class="todo-item">
+          <span class="todo-icon">🎵</span>
+          <div>
+            <div class="todo-name">Paradiso / Melkweg</div>
+            <div class="todo-detail">Check Mon 6 Jul listings closer to date</div>
+          </div>
+          <span class="todo-status pending">Check</span>
+        </div>
+      </div>
+
+      <div class="section-label">Accommodation</div>
+      <div class="accom-card">
+        <div class="accom-title">EuroParcs Bungalow · Uitdam</div>
+        <div class="accom-detail">Zeedijk 2, Uitdam, Noord-Holland 1154 PP</div>
+        <div class="accom-ref">Ref: HMT2BYCFTF</div>
+        <div class="accom-times">
+          <span>Check-in: from 4pm, Thu 3 Jul</span>
+          <span>Check-out: before 10am, Mon 6 Jul</span>
+        </div>
+      </div>
+    </div>
   </div>
 
+  <!-- ITINERARY -->
   <div class="screen" id="itinerary">
-    <h1>📅 Itinerary</h1>
-    <div id="itinerary-content"></div>
+    <div class="screen-header">
+      <h2>📅 Itinerary</h2>
+    </div>
+    <div class="screen-body" id="itinerary-content"></div>
   </div>
 
+  <!-- FOOD -->
   <div class="screen" id="food">
-    <h1>🍔 Food</h1>
-    <p>Restaurants and food plans</p>
+    <div class="screen-header">
+      <h2>🍽️ Food possibilities</h2>
+      <p class="screen-sub">Nothing booked — pick on the day</p>
+    </div>
+    <div class="screen-body" id="food-content"></div>
   </div>
 
+  <!-- CLUBS -->
+  <div class="screen" id="clubs">
+    <div class="screen-header">
+      <h2>🎉 Clubs & Bars</h2>
+      <p class="screen-sub">Potential nights out</p>
+    </div>
+    <div class="screen-body" id="clubs-content"></div>
+  </div>
+
+  <!-- INFO -->
   <div class="screen" id="info">
-    <h1>ℹ️ Info</h1>
-    <p>Important trip info</p>
+    <div class="screen-header">
+      <h2>ℹ️ Key Info</h2>
+    </div>
+    <div class="screen-body" id="info-content"></div>
   </div>
 
-  <!-- Bottom Navigation -->
+  <!-- BOTTOM NAV -->
   <nav class="bottom-nav">
-    <button onclick="showScreen('home')">Home</button>
-    <button onclick="showScreen('itinerary')">Itinerary</button>
-    <button onclick="showScreen('food')">Food</button>
-    <button onclick="showScreen('info')">Info</button>
+    <button class="nav-btn active" onclick="showScreen('home', this)">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">Home</span>
+    </button>
+    <button class="nav-btn" onclick="showScreen('itinerary', this)">
+      <span class="nav-icon">📅</span>
+      <span class="nav-label">Itinerary</span>
+    </button>
+    <button class="nav-btn" onclick="showScreen('food', this)">
+      <span class="nav-icon">🍽️</span>
+      <span class="nav-label">Food</span>
+    </button>
+    <button class="nav-btn" onclick="showScreen('clubs', this)">
+      <span class="nav-icon">🎉</span>
+      <span class="nav-label">Clubs</span>
+    </button>
+    <button class="nav-btn" onclick="showScreen('info', this)">
+      <span class="nav-icon">ℹ️</span>
+      <span class="nav-label">Info</span>
+    </button>
   </nav>
 
   <script src="script.js"></script>
